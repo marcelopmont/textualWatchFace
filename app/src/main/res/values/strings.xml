@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">Text WatchFace</string>
+    <string name="my_digital_name">Simple Text</string>
+
+    <string name="zero">zero</string>
+    <string name="one">one</string>
+    <string name="two">two</string>
+    <string name="three">three</string>
+    <string name="four">four</string>
+    <string name="five">five</string>
+    <string name="six">six</string>
+    <string name="seven">seven</string>
+    <string name="eight">eight</string>
+    <string name="nine">nine</string>
+    <string name="ten">ten</string>
+    <string name="eleven">eleven</string>
+    <string name="twelve">twelve</string>
+    <string name="thirteen">thirteen</string>
+    <string name="fourteen">fourteen</string>
+    <string name="fifteen">fifteen</string>
+    <string name="sixteen">sixteen</string>
+    <string name="seventeen">seventeen</string>
+    <string name="eighteen">eighteen</string>
+    <string name="nineteen">nineteen</string>
+    <string name="twenty">twenty</string>
+    <string name="thirty">thirty</string>
+    <string name="forty">forty</string>
+    <string name="fifty">fifty</string>
+</resources>
