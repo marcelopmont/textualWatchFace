@@ -21,10 +21,9 @@ import android.view.WindowInsets
 
 
 import java.lang.ref.WeakReference
-import java.util.Calendar
-import java.util.TimeZone
 import android.os.BatteryManager
-
+import java.text.DateFormat
+import java.util.*
 
 
 /**
@@ -78,9 +77,10 @@ class MyWatchFace : CanvasWatchFaceService() {
         private var mXOffset: Float = 0F
         private var mYOffset: Float = 0F
 
-        private lateinit var mHourPaint: Paint
-        private lateinit var mMinutesPaint: Paint
-        private lateinit var mBatteryPaint: Paint
+        private lateinit var mHour: ScreenElementModel
+        private lateinit var mMinute: ScreenElementModel
+        private lateinit var mBattery: ScreenElementModel
+        private lateinit var mDate: ScreenElementModel
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -112,22 +112,7 @@ class MyWatchFace : CanvasWatchFaceService() {
             val resources = this@MyWatchFace.resources
             mYOffset = resources.getDimension(R.dimen.digital_y_offset)
 
-            // Initializes Watch Face.
-            mHourPaint = Paint().apply {
-                typeface = NORMAL_TYPEFACE
-                isAntiAlias = true
-                color = ContextCompat.getColor(applicationContext, R.color.digital_text)
-            }
-            mMinutesPaint = Paint().apply {
-                typeface = NORMAL_TYPEFACE
-                isAntiAlias = true
-                color = ContextCompat.getColor(applicationContext, R.color.digital_text)
-            }
-            mBatteryPaint = Paint().apply {
-                typeface = NORMAL_TYPEFACE
-                isAntiAlias = true
-                color = ContextCompat.getColor(applicationContext, R.color.digital_text)
-            }
+
         }
 
         override fun onDestroy() {
@@ -155,9 +140,10 @@ class MyWatchFace : CanvasWatchFaceService() {
             mAmbient = inAmbientMode
 
             if (mLowBitAmbient) {
-                mHourPaint.isAntiAlias = !inAmbientMode
-                mMinutesPaint.isAntiAlias = !inAmbientMode
-                mBatteryPaint.isAntiAlias = !inAmbientMode
+                mHour.paint.isAntiAlias = !inAmbientMode
+                mMinute.paint.isAntiAlias = !inAmbientMode
+                mBattery.paint.isAntiAlias = !inAmbientMode
+                mDate.paint.isAntiAlias = !inAmbientMode
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -170,11 +156,12 @@ class MyWatchFace : CanvasWatchFaceService() {
             // Draw the background.
             canvas.drawColor(Color.BLACK)
 
+            drawTime(canvas, bounds)
+
             if (!mAmbient) {
                 drawBatteryLevel(canvas, bounds)
+                drawDate(canvas, bounds)
             }
-
-            drawTime(canvas, bounds)
 
         }
 
@@ -186,27 +173,25 @@ class MyWatchFace : CanvasWatchFaceService() {
             if (hour > 12) {
                 hour -= 12
             }
+            mHour.draw(hour.toText(applicationContext), canvas, bounds)
+
             val minutes = mCalendar.get(Calendar.MINUTE).toText(applicationContext)
 
-            val xPosition = bounds.width().toFloat() * 0.9f
-            val yPosition = bounds.height().toFloat() / 2
-
-
-            val minutesBounds = Rect()
-            mMinutesPaint.getTextBounds(minutes, 0, minutes.length, minutesBounds)
-
-            canvas.drawText(hour.toText(applicationContext), xPosition, yPosition, mHourPaint)
-            canvas.drawText(minutes, xPosition, yPosition + minutesBounds.height() + 5, mMinutesPaint)
+            mMinute.draw(minutes, canvas, bounds, mMinute.getHeight() + 5)
         }
 
         private fun drawBatteryLevel(canvas: Canvas, bounds: Rect) {
             val batteryLevel = getBatteryLevel()
 
-            val xPosition = bounds.width().toFloat() / 2
-            val yPosition = bounds.height().toFloat() * 0.2f
-
-            canvas.drawText("$batteryLevel%", xPosition, yPosition, mBatteryPaint)
+            mBattery.draw("$batteryLevel%", canvas, bounds)
         }
+
+        private fun drawDate(canvas: Canvas, bounds: Rect) {
+            val dateString = DateFormat.getDateInstance(DateFormat.LONG).format(mCalendar.time)
+
+            mDate.draw(dateString, canvas, bounds)
+        }
+
 
         fun getBatteryLevel(): Int {
             val batteryIntent = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -264,22 +249,41 @@ class MyWatchFace : CanvasWatchFaceService() {
                     R.dimen.digital_x_offset
             )
 
+            mHour = ScreenElementModel(0.9f,
+                0.5f,
+                resources.getDimension(R.dimen.digital_hour_text_size),
+                applicationContext)
+
+            mMinute = ScreenElementModel(0.9f,
+                0.5f,
+                resources.getDimension(R.dimen.digital_minutes_text_size),
+                applicationContext)
+
+            mDate = ScreenElementModel(0.5f,
+                0.8f,
+                resources.getDimension(R.dimen.digital_date_size),
+                applicationContext)
+
             if (isRound) {
-                mHourPaint.textSize = resources.getDimension(R.dimen.digital_hour_text_size_round)
-                mMinutesPaint.textSize = resources.getDimension(R.dimen.digital_minutes_text_size_round)
-                mBatteryPaint.textSize = resources.getDimension(R.dimen.digital_battery_size_round)
+                mBattery = ScreenElementModel(0.4f,
+                    0.2f,
+                    resources.getDimension(R.dimen.digital_battery_size),
+                    applicationContext)
             } else {
-                mHourPaint.textSize = resources.getDimension(R.dimen.digital_hour_text_size)
-                mMinutesPaint.textSize = resources.getDimension(R.dimen.digital_minutes_text_size)
-                mBatteryPaint.textSize = resources.getDimension(R.dimen.digital_battery_size)
+                mBattery = ScreenElementModel(0.25f,
+                    0.2f,
+                    resources.getDimension(R.dimen.digital_battery_size),
+                    applicationContext)
+
             }
 
 
-            mHourPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            mHour.paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
 
-            mHourPaint.textAlign = Paint.Align.RIGHT
-            mMinutesPaint.textAlign = Paint.Align.RIGHT
-            mBatteryPaint.textAlign = Paint.Align.CENTER
+            mHour.paint.textAlign = Paint.Align.RIGHT
+            mMinute.paint.textAlign = Paint.Align.RIGHT
+            mBattery.paint.textAlign = Paint.Align.CENTER
+            mDate.paint.textAlign = Paint.Align.CENTER
         }
 
         /**
