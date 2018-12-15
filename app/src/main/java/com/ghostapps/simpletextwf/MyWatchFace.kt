@@ -12,37 +12,20 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
-import android.support.v4.content.ContextCompat
 import android.support.wearable.watchface.CanvasWatchFaceService
 import android.support.wearable.watchface.WatchFaceService
 import android.support.wearable.watchface.WatchFaceStyle
 import android.view.SurfaceHolder
 import android.view.WindowInsets
 
-
 import java.lang.ref.WeakReference
 import android.os.BatteryManager
 import java.text.DateFormat
 import java.util.*
 
-
-/**
- * Digital watch face with seconds. In ambient mode, the seconds aren't displayed. On devices with
- * low-bit ambient mode, the text is drawn without anti-aliasing in ambient mode.
- *
- *
- * Important Note: Because watch face apps do not have a default Activity in
- * their project, you will need to set your Configurations to
- * "Do not launch Activity" for both the Wear and/or Application modules. If you
- * are unsure how to do this, please review the "Run Starter project" section
- * in the Google Watch Face Code Lab:
- * https://codelabs.developers.google.com/codelabs/watchface/index.html#0
- */
 class MyWatchFace : CanvasWatchFaceService() {
 
     companion object {
-        private val NORMAL_TYPEFACE = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
-
         private const val INTERACTIVE_UPDATE_RATE_MS = 5000
 
         /**
@@ -74,9 +57,6 @@ class MyWatchFace : CanvasWatchFaceService() {
 
         private var mRegisteredTimeZoneReceiver = false
 
-        private var mXOffset: Float = 0F
-        private var mYOffset: Float = 0F
-
         private lateinit var mHour: ScreenElementModel
         private lateinit var mMinute: ScreenElementModel
         private lateinit var mBattery: ScreenElementModel
@@ -91,49 +71,6 @@ class MyWatchFace : CanvasWatchFaceService() {
         private var mAmbient: Boolean = false
 
         private val mUpdateTimeHandler: Handler = EngineHandler(this)
-
-        private val mTimeZoneReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                mCalendar.timeZone = TimeZone.getDefault()
-                invalidate()
-            }
-        }
-
-        override fun onCreate(holder: SurfaceHolder) {
-            super.onCreate(holder)
-
-            setWatchFaceStyle(
-                WatchFaceStyle.Builder(this@MyWatchFace)
-                    .build()
-            )
-
-            mCalendar = Calendar.getInstance()
-
-            val resources = this@MyWatchFace.resources
-            mYOffset = resources.getDimension(R.dimen.digital_y_offset)
-
-
-        }
-
-        override fun onDestroy() {
-            mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME)
-            super.onDestroy()
-        }
-
-        override fun onPropertiesChanged(properties: Bundle) {
-            super.onPropertiesChanged(properties)
-            mLowBitAmbient = properties.getBoolean(
-                WatchFaceService.PROPERTY_LOW_BIT_AMBIENT, false
-            )
-            mBurnInProtection = properties.getBoolean(
-                WatchFaceService.PROPERTY_BURN_IN_PROTECTION, false
-            )
-        }
-
-        override fun onTimeTick() {
-            super.onTimeTick()
-            invalidate()
-        }
 
         override fun onAmbientModeChanged(inAmbientMode: Boolean) {
             super.onAmbientModeChanged(inAmbientMode)
@@ -192,13 +129,91 @@ class MyWatchFace : CanvasWatchFaceService() {
             mDate.draw(dateString, canvas, bounds)
         }
 
-
         fun getBatteryLevel(): Int {
             val batteryIntent = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
             val level = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: 0
             val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: 0
 
             return (level.toFloat() / scale.toFloat() * 100.0f).toInt()
+        }
+
+        override fun onApplyWindowInsets(insets: WindowInsets) {
+            super.onApplyWindowInsets(insets)
+
+            mHour = ScreenElementModel(0.9f,
+                0.5f,
+                resources.getDimension(R.dimen.digital_hour_text_size),
+                applicationContext)
+
+            mMinute = ScreenElementModel(0.9f,
+                0.5f,
+                resources.getDimension(R.dimen.digital_minutes_text_size),
+                applicationContext)
+
+            mDate = ScreenElementModel(0.5f,
+                0.8f,
+                resources.getDimension(R.dimen.digital_date_size),
+                applicationContext)
+
+            if (insets.isRound) {
+                mBattery = ScreenElementModel(0.4f,
+                    0.2f,
+                    resources.getDimension(R.dimen.digital_battery_size),
+                    applicationContext)
+            } else {
+                mBattery = ScreenElementModel(0.25f,
+                    0.2f,
+                    resources.getDimension(R.dimen.digital_battery_size),
+                    applicationContext)
+            }
+
+
+            mHour.paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+
+            mHour.paint.textAlign = Paint.Align.RIGHT
+            mMinute.paint.textAlign = Paint.Align.RIGHT
+            mBattery.paint.textAlign = Paint.Align.CENTER
+            mDate.paint.textAlign = Paint.Align.CENTER
+        }
+
+        //region default methods
+        private val mTimeZoneReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                mCalendar.timeZone = TimeZone.getDefault()
+                invalidate()
+            }
+        }
+
+        override fun onCreate(holder: SurfaceHolder) {
+            super.onCreate(holder)
+
+            setWatchFaceStyle(
+                WatchFaceStyle.Builder(this@MyWatchFace)
+                    .build()
+            )
+
+            mCalendar = Calendar.getInstance()
+
+        }
+
+        override fun onDestroy() {
+            mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME)
+            super.onDestroy()
+        }
+
+        override fun onPropertiesChanged(properties: Bundle) {
+            super.onPropertiesChanged(properties)
+            mLowBitAmbient = properties.getBoolean(
+                WatchFaceService.PROPERTY_LOW_BIT_AMBIENT, false
+            )
+            mBurnInProtection = properties.getBoolean(
+                WatchFaceService.PROPERTY_BURN_IN_PROTECTION, false
+            )
+        }
+
+        override fun onTimeTick() {
+            super.onTimeTick()
+            invalidate()
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
@@ -236,56 +251,6 @@ class MyWatchFace : CanvasWatchFaceService() {
             this@MyWatchFace.unregisterReceiver(mTimeZoneReceiver)
         }
 
-        override fun onApplyWindowInsets(insets: WindowInsets) {
-            super.onApplyWindowInsets(insets)
-
-            // Load resources that have alternate values for round watches.
-            val resources = this@MyWatchFace.resources
-            val isRound = insets.isRound
-            mXOffset = resources.getDimension(
-                if (isRound)
-                    R.dimen.digital_x_offset_round
-                else
-                    R.dimen.digital_x_offset
-            )
-
-            mHour = ScreenElementModel(0.9f,
-                0.5f,
-                resources.getDimension(R.dimen.digital_hour_text_size),
-                applicationContext)
-
-            mMinute = ScreenElementModel(0.9f,
-                0.5f,
-                resources.getDimension(R.dimen.digital_minutes_text_size),
-                applicationContext)
-
-            mDate = ScreenElementModel(0.5f,
-                0.8f,
-                resources.getDimension(R.dimen.digital_date_size),
-                applicationContext)
-
-            if (isRound) {
-                mBattery = ScreenElementModel(0.4f,
-                    0.2f,
-                    resources.getDimension(R.dimen.digital_battery_size),
-                    applicationContext)
-            } else {
-                mBattery = ScreenElementModel(0.25f,
-                    0.2f,
-                    resources.getDimension(R.dimen.digital_battery_size),
-                    applicationContext)
-
-            }
-
-
-            mHour.paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-
-            mHour.paint.textAlign = Paint.Align.RIGHT
-            mMinute.paint.textAlign = Paint.Align.RIGHT
-            mBattery.paint.textAlign = Paint.Align.CENTER
-            mDate.paint.textAlign = Paint.Align.CENTER
-        }
-
         /**
          * Starts the [.mUpdateTimeHandler] timer if it should be running and isn't currently
          * or stops it if it shouldn't be running but currently is.
@@ -316,5 +281,6 @@ class MyWatchFace : CanvasWatchFaceService() {
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs)
             }
         }
+        //endregion
     }
 }
