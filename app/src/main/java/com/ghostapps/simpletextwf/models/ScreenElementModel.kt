@@ -41,6 +41,13 @@ class ScreenElementModel (var xRelativePosition: Float, var yRelativePosition: F
         return bounds.height()
     }
 
+    fun getWidth(text: String): Int {
+        val bounds = Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+
+        return bounds.width()
+    }
+
     fun draw(text: String, canvas: Canvas, bounds: Rect) {
         canvas.drawText(text, xRelativePosition * bounds.height().toFloat(), yRelativePosition * bounds.height().toFloat(), paint)
     }
@@ -58,8 +65,12 @@ class ScreenElementModel (var xRelativePosition: Float, var yRelativePosition: F
 
     }
 
-    fun draw(text: String, canvas: Canvas, bounds: Rect, deltaY: Int) {
+    fun drawWithDeltaY(text: String, canvas: Canvas, bounds: Rect, deltaY: Int) {
         canvas.drawText(text, xRelativePosition * bounds.height().toFloat(), yRelativePosition * bounds.height().toFloat() + deltaY, paint)
+    }
+
+    fun drawWithDeltaX(text: String, canvas: Canvas, bounds: Rect, deltaX: Int) {
+        canvas.drawText(text, xRelativePosition * bounds.height().toFloat() - deltaX, yRelativePosition * bounds.height().toFloat(), paint)
     }
 
 }

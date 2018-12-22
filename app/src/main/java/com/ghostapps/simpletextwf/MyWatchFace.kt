@@ -20,6 +20,7 @@ import android.view.WindowInsets
 
 import java.lang.ref.WeakReference
 import android.os.BatteryManager
+import com.ghostapps.simpletextwf.models.BatteryImageModel
 import com.ghostapps.simpletextwf.models.ScreenElementModel
 import com.ghostapps.simpletextwf.utils.numberToMonth
 import com.ghostapps.simpletextwf.utils.toText
@@ -63,6 +64,7 @@ class MyWatchFace : CanvasWatchFaceService() {
         private lateinit var mHour: ScreenElementModel
         private lateinit var mMinute: ScreenElementModel
         private lateinit var mBattery: ScreenElementModel
+        private lateinit var mBatteryIcon: BatteryImageModel
         private lateinit var mDate: ScreenElementModel
 
         /**
@@ -117,13 +119,18 @@ class MyWatchFace : CanvasWatchFaceService() {
 
             val minutes = mCalendar.get(Calendar.MINUTE).toText(applicationContext)
 
-            mMinute.draw(minutes, canvas, bounds, mMinute.getHeight() + 5)
+            mMinute.drawWithDeltaY(minutes, canvas, bounds, mMinute.getHeight() + 5)
         }
 
         private fun drawBatteryLevel(canvas: Canvas, bounds: Rect) {
             val batteryLevel = getBatteryLevel()
+            val batteryLevelText = "$batteryLevel%"
 
-            mBattery.draw("$batteryLevel%", canvas, bounds)
+            val xDelta = (mBattery.getWidth(batteryLevelText) - mBatteryIcon.getWidth(batteryLevel)) / 2
+
+            mBattery.drawWithDeltaX(batteryLevelText, canvas, bounds, xDelta)
+
+            mBatteryIcon.drawBatteryIcon(batteryLevel, canvas, bounds, xDelta)
         }
 
         private fun drawDate(canvas: Canvas, bounds: Rect) {
@@ -157,43 +164,29 @@ class MyWatchFace : CanvasWatchFaceService() {
                 applicationContext
             )
 
+            mBatteryIcon = BatteryImageModel(
+                0.5f,
+                0.2f,
+                applicationContext)
 
+            mBattery = ScreenElementModel(
+                0.5f,
+                0.2f,
+                resources.getDimension(R.dimen.digital_battery_size),
+                applicationContext
+            )
 
-            if (insets.isRound) {
-                mBattery = ScreenElementModel(
-                    0.5f,
-                    0.2f,
-                    resources.getDimension(R.dimen.digital_battery_size),
-                    applicationContext
-                )
-
-                mDate = ScreenElementModel(
-                    0.5f,
-                    0.8f,
-                    resources.getDimension(R.dimen.digital_date_size),
-                    applicationContext
-                )
-
-            } else {
-                mBattery = ScreenElementModel(
-                    0.5f,
-                    0.2f,
-                    resources.getDimension(R.dimen.digital_battery_size),
-                    applicationContext
-                )
-
-                mDate = ScreenElementModel(
-                    0.5f,
-                    0.8f,
-                    resources.getDimension(R.dimen.digital_date_size),
-                    applicationContext
-                )
-            }
+            mDate = ScreenElementModel(
+                0.5f,
+                0.8f,
+                resources.getDimension(R.dimen.digital_date_size),
+                applicationContext
+            )
 
 
             mHour.paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
 
-            mBattery.paint.textAlign = Paint.Align.CENTER
+            mBattery.paint.textAlign = Paint.Align.LEFT
             mDate.paint.textAlign = Paint.Align.CENTER
         }
 
