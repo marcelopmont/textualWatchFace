@@ -1,6 +1,8 @@
-package com.ghostapps.simpletextwf
+package com.ghostapps.simpletextwf.utils
 
 import android.content.Context
+import android.graphics.Canvas
+import com.ghostapps.simpletextwf.R
 
 fun Int.toText(context: Context): String {
     return if (this <= 20) {
@@ -12,7 +14,10 @@ fun Int.toText(context: Context): String {
         if (unit == 0) {
             numberToText(context, decimal * 10)
         } else {
-            "${numberToText(context, decimal * 10)} ${numberToText(context, unit)}"
+            "${numberToText(
+                context,
+                decimal * 10
+            )} ${numberToText(context, unit)}"
         }
     }
 }
@@ -43,6 +48,24 @@ private fun numberToText(context: Context, number: Int): String {
         30 -> context.getString(R.string.thirty)
         40 -> context.getString(R.string.forty)
         50 -> context.getString(R.string.fifty)
+        else -> ""
+    }
+}
+
+fun Int.numberToMonth(context: Context): String {
+    return when (this) {
+        0 -> context.getString(R.string.january)
+        1 -> context.getString(R.string.february)
+        2 -> context.getString(R.string.march)
+        3 -> context.getString(R.string.april)
+        4 -> context.getString(R.string.may)
+        5 -> context.getString(R.string.june)
+        6 -> context.getString(R.string.july)
+        7 -> context.getString(R.string.august)
+        8 -> context.getString(R.string.september)
+        9 -> context.getString(R.string.october)
+        10 -> context.getString(R.string.november)
+        11 -> context.getString(R.string.december)
         else -> ""
     }
 }
